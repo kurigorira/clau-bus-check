@@ -35,11 +35,19 @@ function loadConfig() {
 }
 
 function formatMessage(hit, cfg) {
-  const parts = [`${cfg.destination}行き ${hit.departure} 発`];
+  const head = hit.departure
+    ? `${cfg.destination}行き ${hit.departure} 発`
+    : `${cfg.destination}行き`;
+  const parts = [head];
   if (hit.status) parts.push(hit.status);
   if (hit.minutesAway != null) parts.push(`(約${hit.minutesAway}分後)`);
   if (hit.stopsAway != null) parts.push(`(あと${hit.stopsAway}停留所)`);
-  return parts.join(' / ');
+  let msg = parts.join(' / ');
+  // 画面の実際の文言も添える(判定が甘くても現物が届くように)
+  if (cfg.includeRawText !== false && hit.rawBlock) {
+    msg += `\n― 画面表示: ${hit.rawBlock}`;
+  }
+  return msg;
 }
 
 async function checkOnce(cfg) {
@@ -89,13 +97,19 @@ async function main() {
     try {
       const hit = await checkOnce(cfg);
       if (hit.found) {
-        const near =
-          (hit.minutesAway != null && hit.minutesAway <= (cfg.notifyWithinMinutes || 5)) ||
-          (hit.stopsAway != null && hit.stopsAway <= (cfg.notifyWithinStops || 3)) ||
-          /まもなく/.test(hit.status || '');
         console.log(`[try ${i + 1}] ${formatMessage(hit, cfg)}`);
+        // この接近画面は「いま接近中のバス」しか出さないので、
+        // 立神が出た時点で通知する。数値しきい値を使いたい場合のみ絞り込む。
+        const useThreshold =
+          cfg.notifyWithinMinutes != null || cfg.notifyWithinStops != null;
+        const near =
+          !useThreshold ||
+          (hit.minutesAway != null && hit.minutesAway <= (cfg.notifyWithinMinutes ?? Infinity)) ||
+          (hit.stopsAway != null && hit.stopsAway <= (cfg.notifyWithinStops ?? Infinity)) ||
+          /まもなく/.test(hit.status || '') ||
+          (hit.minutesAway == null && hit.stopsAway == null); // 数値が読めない場合も通知
         if (near) {
-          await sendNotification(cfg, '🚌 バスがまもなく到着', formatMessage(hit, cfg));
+          await sendNotification(cfg, '🚌 立神行きが接近', formatMessage(hit, cfg));
           notified = true;
           break;
         }
