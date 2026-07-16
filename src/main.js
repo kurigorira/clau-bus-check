@@ -9,6 +9,7 @@
 // 前提: このサイトは日本国内IP限定。必ず日本のネットワークで実行すること。
 
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { fetchApproaching } from './scrape.js';
 import { parseTarget } from './parse.js';
 import { sendNotification } from './notify.js';
@@ -18,7 +19,7 @@ const DEBUG = args.has('--debug');
 const ONCE = args.has('--once');
 
 function loadConfig() {
-  const path = process.env.BUS_CONFIG || new URL('../config.json', import.meta.url).pathname;
+  const path = process.env.BUS_CONFIG || fileURLToPath(new URL('../config.json', import.meta.url));
   try {
     return JSON.parse(readFileSync(path, 'utf-8'));
   } catch (e) {

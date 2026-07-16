@@ -9,6 +9,7 @@
 // の2段構えにしている。--debug で両方を丸ごとダンプできる。
 
 import { chromium } from 'playwright';
+import { fileURLToPath } from 'node:url';
 
 // 環境変数で Chromium のパスを差し替え可能(未指定なら playwright が同梱ブラウザを探す)
 const EXECUTABLE_PATH = process.env.CHROMIUM_PATH || undefined;
@@ -65,7 +66,7 @@ export async function fetchApproaching(cfg, debug = false) {
     pageText = await page.evaluate(() => document.body.innerText).catch(() => '');
 
     if (debug) {
-      screenshotPath = new URL('../debug-screenshot.png', import.meta.url).pathname;
+      screenshotPath = fileURLToPath(new URL('../debug-screenshot.png', import.meta.url));
       await page.screenshot({ path: screenshotPath, fullPage: true }).catch(() => {
         screenshotPath = null;
       });
