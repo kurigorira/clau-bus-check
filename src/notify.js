@@ -20,7 +20,12 @@ export async function sendNotification(cfg, title, message) {
     if (!n.ntfyTopic) throw new Error('config.notify.ntfyTopic が未設定です');
     const res = await fetch(n.ntfyTopic, {
       method: 'POST',
-      headers: { Title: encodeHeader(title), Priority: 'high', Tags: 'bus' },
+      headers: {
+        Title: encodeHeader(title),
+        // urgent(=5) は最高優先度。ntfyアプリで許可すれば消音/睡眠中でも鳴らせる。
+        Priority: n.priority || 'urgent',
+        Tags: 'bus',
+      },
       body: message,
     });
     if (!res.ok) throw new Error(`ntfy 送信失敗: ${res.status}`);
