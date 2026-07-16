@@ -28,11 +28,9 @@
 ```bash
 git clone <this-repo>
 cd clau-bus-check
-npm install                      # playwright-core を入れる
-
-# 実ブラウザ(Chromium)が必要。未導入なら:
-npx playwright install chromium
-# もしくは既存のChromeを使う場合は環境変数で指定:
+npm install                      # playwright を入れる
+npx playwright install chromium  # 実ブラウザ(Chromium)を取得
+# もしくは既存のChrome/Chromiumを使う場合は環境変数で指定:
 #   export CHROMIUM_PATH=/path/to/chrome
 
 cp config.example.json config.json

@@ -11,7 +11,7 @@
     "debug": "node src/main.js --debug --once"
   },
   "dependencies": {
-    "playwright-core": "^1.40.0"
+    "playwright": "^1.40.0"
   },
   "license": "MIT"
 }

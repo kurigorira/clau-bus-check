@@ -8,9 +8,9 @@
 //   2) 取れなければ、画面に描画されたテキストから読み取る
 // の2段構えにしている。--debug で両方を丸ごとダンプできる。
 
-import { chromium } from 'playwright-core';
+import { chromium } from 'playwright';
 
-// 環境変数で Chromium のパスを差し替え可能(未指定なら playwright-core が探す)
+// 環境変数で Chromium のパスを差し替え可能(未指定なら playwright が同梱ブラウザを探す)
 const EXECUTABLE_PATH = process.env.CHROMIUM_PATH || undefined;
 
 const MOBILE_UA =
