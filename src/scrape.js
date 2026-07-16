@@ -32,6 +32,7 @@ export async function fetchApproaching(cfg, debug = false) {
 
   const browser = await chromium.launch(launchOpts);
   const jsonPayloads = [];
+  const apiUrls = [];
   let pageText = '';
   let screenshotPath = null;
 
@@ -43,6 +44,12 @@ export async function fetchApproaching(cfg, debug = false) {
       viewport: { width: 390, height: 844 },
     });
     const page = await context.newPage();
+
+    // 叩いたAPIのURLを記録(接近APIのエンドポイント特定用)
+    page.on('request', (req) => {
+      const u = req.url();
+      if (u.includes('/apiv1/')) apiUrls.push(`${req.method()} ${u}`);
+    });
 
     // 裏で流れるJSONを拾う
     page.on('response', async (res) => {
@@ -60,8 +67,8 @@ export async function fetchApproaching(cfg, debug = false) {
       waitUntil: 'networkidle',
       timeout: cfg.timeoutMs || 45000,
     });
-    // 動的描画の追い込み
-    await page.waitForTimeout(2500);
+    // 動的描画の追い込み(接近APIの初回ポーリングも拾えるよう少し長めに待つ)
+    await page.waitForTimeout(4000);
 
     pageText = await page.evaluate(() => document.body.innerText).catch(() => '');
 
@@ -75,5 +82,5 @@ export async function fetchApproaching(cfg, debug = false) {
     await browser.close();
   }
 
-  return { jsonPayloads, pageText, screenshotPath };
+  return { jsonPayloads, apiUrls, pageText, screenshotPath };
 }

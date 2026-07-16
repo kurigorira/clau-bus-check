@@ -41,6 +41,9 @@ async function checkOnce(cfg) {
   const raw = await fetchApproaching(cfg, DEBUG);
 
   if (DEBUG) {
+    console.log('\n===== DEBUG: 叩いたAPI URL一覧 =====');
+    console.log([...new Set(raw.apiUrls || [])].join('\n') || '(なし)');
+
     console.log('\n===== DEBUG: 拾ったJSONレスポンス =====');
     for (const p of raw.jsonPayloads) {
       console.log('URL:', p.url);
