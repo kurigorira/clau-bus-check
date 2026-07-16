@@ -23,7 +23,7 @@ const MOBILE_UA =
  * @param {boolean} debug
  * @returns {Promise<{jsonPayloads: any[], pageText: string, screenshotPath: string|null}>}
  */
-export async function fetchApproaching(cfg, debug = false) {
+export async function fetchApproaching(cfg, debug = false, waitMsOverride = null) {
   const launchOpts = {
     headless: cfg.headless !== false,
     args: ['--no-sandbox', '--disable-dev-shm-usage'],
@@ -67,8 +67,9 @@ export async function fetchApproaching(cfg, debug = false) {
       waitUntil: 'networkidle',
       timeout: cfg.timeoutMs || 45000,
     });
-    // 動的描画の追い込み(接近APIの初回ポーリングも拾えるよう少し長めに待つ)
-    await page.waitForTimeout(4000);
+    // 動的描画の追い込み(接近APIの初回ポーリングも拾えるよう少し長めに待つ)。
+    // --wait=SECONDS 指定時はその秒数だけ待ち、1分周期の自動更新も捕捉する。
+    await page.waitForTimeout(waitMsOverride || 4000);
 
     pageText = await page.evaluate(() => document.body.innerText).catch(() => '');
 

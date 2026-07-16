@@ -14,9 +14,14 @@ import { fetchApproaching } from './scrape.js';
 import { parseTarget } from './parse.js';
 import { sendNotification } from './notify.js';
 
-const args = new Set(process.argv.slice(2));
+const argv = process.argv.slice(2);
+const args = new Set(argv);
 const DEBUG = args.has('--debug');
 const ONCE = args.has('--once');
+// --wait=SECONDS : ページ読み込み後の待機秒数を上書き(接近APIの自動更新ポーリングを
+// 捕捉したい朝の調査用。例: --wait=90 で1分周期の更新を1回は拾える)
+const WAIT_ARG = argv.find((a) => a.startsWith('--wait='));
+const WAIT_MS = WAIT_ARG ? Number(WAIT_ARG.split('=')[1]) * 1000 : null;
 
 function loadConfig() {
   const path = process.env.BUS_CONFIG || fileURLToPath(new URL('../config.json', import.meta.url));
@@ -38,7 +43,7 @@ function formatMessage(hit, cfg) {
 }
 
 async function checkOnce(cfg) {
-  const raw = await fetchApproaching(cfg, DEBUG);
+  const raw = await fetchApproaching(cfg, DEBUG, WAIT_MS);
 
   if (DEBUG) {
     console.log('\n===== DEBUG: 叩いたAPI URL一覧 =====');
