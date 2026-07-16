@@ -1,0 +1,17 @@
+{
+  "name": "clau-bus-check",
+  "version": "1.0.0",
+  "description": "長崎バスの接近情報(NAVITIME 乗換時刻表クラウド)を毎朝チェックして、指定した便が近づいたらプッシュ通知する",
+  "type": "module",
+  "bin": {
+    "bus-check": "./src/main.js"
+  },
+  "scripts": {
+    "start": "node src/main.js",
+    "debug": "node src/main.js --debug --once"
+  },
+  "dependencies": {
+    "playwright-core": "^1.40.0"
+  },
+  "license": "MIT"
+}

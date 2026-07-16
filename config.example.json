@@ -1,0 +1,32 @@
+{
+  "_comment": "このファイルを config.json にコピーして自分の値に書き換えてください。",
+
+  "url": "https://transfer-cloud.navitime.biz/nagasaki-bus/approachings?departure-busstop=00410505&pole=000000001062",
+  "_url_note": "スマホで見ている接近情報ページのURLをそのまま貼る。departure-busstop=乗るバス停(新開北=00410505), pole=乗り場(のりば)コード。",
+
+  "destination": "立神",
+  "_destination_note": "行き先(方面)でバスを絞り込むためのキーワード。部分一致。",
+
+  "targetDeparture": "06:39",
+  "_targetDeparture_note": "狙っている発車時刻 (HH:MM)。この時刻に最も近い便を対象にする。",
+
+  "matchWindowMinutes": 8,
+  "_matchWindowMinutes_note": "targetDeparture から前後この分数以内の便だけを対象にする(別便の誤検知を防ぐ)。",
+
+  "notify": {
+    "type": "ntfy",
+    "_type_note": "ntfy | discord | slack | none のいずれか。",
+    "ntfyTopic": "https://ntfy.sh/あなた専用のランダムな文字列",
+    "webhookUrl": "",
+    "_webhookUrl_note": "discord/slack を選んだ場合はここに Incoming Webhook URL を入れる。"
+  },
+
+  "headless": true,
+  "timeoutMs": 45000,
+
+  "_poll_note": "以下は --once を付けずに poll モードで動かすとき用。--once(cron)なら無視される。",
+  "pollIntervalSeconds": 60,
+  "pollMaxTries": 20,
+  "notifyWithinMinutes": 5,
+  "notifyWithinStops": 3
+}
