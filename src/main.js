@@ -35,19 +35,40 @@ function loadConfig() {
 }
 
 function formatMessage(hit, cfg) {
-  const head = hit.departure
-    ? `${cfg.destination}行き ${hit.departure} 発`
-    : `${cfg.destination}行き`;
-  const parts = [head];
-  if (hit.status) parts.push(hit.status);
-  if (hit.minutesAway != null) parts.push(`(約${hit.minutesAway}分後)`);
-  if (hit.stopsAway != null) parts.push(`(あと${hit.stopsAway}停留所)`);
-  let msg = parts.join(' / ');
-  // 画面の実際の文言も添える(判定が甘くても現物が届くように)
-  if (cfg.includeRawText !== false && hit.rawBlock) {
-    msg += `\n― 画面表示: ${hit.rawBlock}`;
+  // 1行目: 行き先 + 定刻(+予測/遅れ)
+  let head = `${cfg.destination}ゆき`;
+  if (hit.departure) head += ` 定刻${hit.departure}`;
+  const sub = [];
+  if (hit.predicted) sub.push(`${hit.predicted}予測`);
+  if (hit.delayText) sub.push(hit.delayText);
+  if (sub.length) head += `(${sub.join(' / ')})`;
+
+  // 2行目: いまどこにいるか
+  const where = [];
+  if (hit.status) where.push(hit.status);
+  else {
+    if (hit.minutesAway != null) where.push(`あと約${hit.minutesAway}分`);
+    if (hit.stopsAway != null) where.push(`${hit.stopsAway}個前`);
   }
-  return msg;
+  // status に「あと約○分」が入っていても、個数情報があれば添える
+  if (hit.status && hit.stopsAway != null && !/個前/.test(hit.status)) {
+    where.push(`${hit.stopsAway}個前`);
+  }
+
+  return where.length ? `${head}\n${where.join(' ・ ')}` : head;
+}
+
+// 通知すべき「近さ」か判定。しきい値未設定なら常に通知(=出た時点で知らせる)。
+function isNear(hit, cfg) {
+  const minTh = cfg.notifyWithinMinutes;
+  const stopTh = cfg.notifyWithinStops;
+  if (minTh == null && stopTh == null) return true;
+  if (hit.minutesAway != null && minTh != null && hit.minutesAway <= minTh) return true;
+  if (hit.stopsAway != null && stopTh != null && hit.stopsAway <= stopTh) return true;
+  if (/まもなく/.test(hit.status || '')) return true;
+  // 数値がまったく読めない場合は取りこぼしを避けて通知
+  if (hit.minutesAway == null && hit.stopsAway == null) return true;
+  return false;
 }
 
 async function checkOnce(cfg) {
@@ -80,8 +101,12 @@ async function main() {
     const hit = await checkOnce(cfg);
     if (hit.found) {
       const msg = formatMessage(hit, cfg);
-      console.log('[hit]', msg);
-      await sendNotification(cfg, '🚌 バス接近', msg);
+      if (isNear(hit, cfg)) {
+        console.log('[hit]', msg);
+        await sendNotification(cfg, '🚌 立神ゆきが接近', msg);
+      } else {
+        console.log('[まだ遠い/通知しきい値未達]', msg);
+      }
     } else {
       console.log('[miss]', hit.note || '該当便なし');
     }
@@ -97,19 +122,11 @@ async function main() {
     try {
       const hit = await checkOnce(cfg);
       if (hit.found) {
-        console.log(`[try ${i + 1}] ${formatMessage(hit, cfg)}`);
-        // この接近画面は「いま接近中のバス」しか出さないので、
-        // 立神が出た時点で通知する。数値しきい値を使いたい場合のみ絞り込む。
-        const useThreshold =
-          cfg.notifyWithinMinutes != null || cfg.notifyWithinStops != null;
-        const near =
-          !useThreshold ||
-          (hit.minutesAway != null && hit.minutesAway <= (cfg.notifyWithinMinutes ?? Infinity)) ||
-          (hit.stopsAway != null && hit.stopsAway <= (cfg.notifyWithinStops ?? Infinity)) ||
-          /まもなく/.test(hit.status || '') ||
-          (hit.minutesAway == null && hit.stopsAway == null); // 数値が読めない場合も通知
-        if (near) {
-          await sendNotification(cfg, '🚌 立神行きが接近', formatMessage(hit, cfg));
+        console.log(`[try ${i + 1}] ${formatMessage(hit, cfg).replace(/\n/g, ' / ')}`);
+        // 接近画面は十数個前からバスを表示するので、しきい値(あと◯分/◯個前)に
+        // 達したら通知して終了する。
+        if (isNear(hit, cfg)) {
+          await sendNotification(cfg, '🚌 立神ゆきが接近', formatMessage(hit, cfg));
           notified = true;
           break;
         }
