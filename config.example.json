@@ -4,13 +4,14 @@
   "url": "https://transfer-cloud.navitime.biz/nagasaki-bus/approachings?departure-busstop=00410505&pole=000000001062",
   "_url_note": "スマホで見ている接近情報ページのURLをそのまま貼る。departure-busstop=乗るバス停ID(日並=00410505), pole=のりばID。別のバス停にするならサイトの『バス停変更』で選んでURLをコピーする。",
 
-  "destination": "立神",
-  "_destination_note": "行き先でバスを絞り込むキーワード。部分一致。画面の表示は『立神ゆき』なので『立神』でよい。",
+  "_targets_note": "通知したい便のリスト。日並→浦上駅前に使える3便。立神は運休日があるので、浦上駅前ゆき/大波止ゆきも入れておくと運休日もカバーできる。destination は行き先(『◯◯ゆき』の◯◯部分。経由地は誤検知しない)、targetDeparture はその便の定刻。",
+  "targets": [
+    { "destination": "立神",   "targetDeparture": "06:37" },
+    { "destination": "浦上駅前", "targetDeparture": "06:37" },
+    { "destination": "大波止",   "targetDeparture": "06:40" }
+  ],
 
-  "targetDeparture": "06:39",
-  "_targetDeparture_note": "狙っている便の定刻 (HH:MM)。この時刻に最も近い便を対象にする(平日の立神ゆきは 06:38 発)。",
-
-  "matchWindowMinutes": 8,
+  "matchWindowMinutes": 6,
   "_matchWindowMinutes_note": "定刻が targetDeparture から前後この分数以内の便だけ対象にする(別便の誤検知を防ぐ)。",
 
   "notify": {

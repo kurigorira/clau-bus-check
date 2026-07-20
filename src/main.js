@@ -11,7 +11,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { fetchApproaching } from './scrape.js';
-import { parseTarget } from './parse.js';
+import { parseTargets } from './parse.js';
 import { sendNotification } from './notify.js';
 
 const argv = process.argv.slice(2);
@@ -34,40 +34,37 @@ function loadConfig() {
   }
 }
 
-function formatMessage(hit, cfg) {
-  // 1行目: 行き先 + 定刻(+予測/遅れ)
-  let head = `${cfg.destination}ゆき`;
-  if (hit.departure) head += ` 定刻${hit.departure}`;
+// 1便を「行き先 定刻(予測/遅れ) — 状況」の複数行にする
+function formatMatch(m) {
+  let head = `${m.destination}ゆき`;
+  if (m.departure) head += ` 定刻${m.departure}`;
   const sub = [];
-  if (hit.predicted) sub.push(`${hit.predicted}予測`);
-  if (hit.delayText) sub.push(hit.delayText);
+  if (m.predicted) sub.push(`${m.predicted}予測`);
+  if (m.delayText) sub.push(m.delayText);
   if (sub.length) head += `(${sub.join(' / ')})`;
 
-  // 2行目: いまどこにいるか
-  const where = [];
-  if (hit.status) where.push(hit.status);
-  else {
-    if (hit.minutesAway != null) where.push(`あと約${hit.minutesAway}分`);
-    if (hit.stopsAway != null) where.push(`${hit.stopsAway}個前`);
+  const where = [m.status];
+  if (m.status && m.stopsAway != null && !/個前/.test(m.status)) {
+    where.push(`${m.stopsAway}個前`);
   }
-  // status に「あと約○分」が入っていても、個数情報があれば添える
-  if (hit.status && hit.stopsAway != null && !/個前/.test(hit.status)) {
-    where.push(`${hit.stopsAway}個前`);
-  }
+  return `${head}\n${where.filter(Boolean).join(' ・ ')}`;
+}
 
-  return where.length ? `${head}\n${where.join(' ・ ')}` : head;
+// 複数便をまとめた通知本文
+function formatMatches(matches) {
+  return matches.map(formatMatch).join('\n\n');
 }
 
 // 通知すべき「近さ」か判定。しきい値未設定なら常に通知(=出た時点で知らせる)。
-function isNear(hit, cfg) {
+function isNear(m, cfg) {
   const minTh = cfg.notifyWithinMinutes;
   const stopTh = cfg.notifyWithinStops;
   if (minTh == null && stopTh == null) return true;
-  if (hit.minutesAway != null && minTh != null && hit.minutesAway <= minTh) return true;
-  if (hit.stopsAway != null && stopTh != null && hit.stopsAway <= stopTh) return true;
-  if (/まもなく/.test(hit.status || '')) return true;
+  if (m.minutesAway != null && minTh != null && m.minutesAway <= minTh) return true;
+  if (m.stopsAway != null && stopTh != null && m.stopsAway <= stopTh) return true;
+  if (/まもなく/.test(m.status || '')) return true;
   // 数値がまったく読めない場合は取りこぼしを避けて通知
-  if (hit.minutesAway == null && hit.stopsAway == null) return true;
+  if (m.minutesAway == null && m.stopsAway == null) return true;
   return false;
 }
 
@@ -90,48 +87,54 @@ async function checkOnce(cfg) {
     console.log('===== DEBUG END =====\n');
   }
 
-  const hit = parseTarget(raw, cfg);
-  return hit;
+  return parseTargets(raw, cfg);
+}
+
+// 通知タイトル(近い便の行き先を並べる)
+function notifyTitle(nearMatches) {
+  const dests = [...new Set(nearMatches.map((m) => `${m.destination}ゆき`))];
+  return `🚌 ${dests.join('・')}が接近`;
 }
 
 async function main() {
   const cfg = loadConfig();
 
   if (ONCE) {
-    const hit = await checkOnce(cfg);
-    if (hit.found) {
-      const msg = formatMessage(hit, cfg);
-      if (isNear(hit, cfg)) {
-        console.log('[hit]', msg);
-        await sendNotification(cfg, '🚌 立神ゆきが接近', msg);
+    const res = await checkOnce(cfg);
+    if (res.found) {
+      const near = res.matches.filter((m) => isNear(m, cfg));
+      if (near.length) {
+        console.log('[hit]\n' + formatMatches(near));
+        await sendNotification(cfg, notifyTitle(near), formatMatches(near));
       } else {
-        console.log('[まだ遠い/通知しきい値未達]', msg);
+        console.log('[まだ遠い/通知しきい値未達]\n' + formatMatches(res.matches));
       }
     } else {
-      console.log('[miss]', hit.note || '該当便なし');
+      console.log('[miss]', res.note || '該当便なし');
     }
     return;
   }
 
   // poll モード: 発車が近い時間帯に数分おきに確認し、接近を検知したら通知して終了
   const intervalMs = (cfg.pollIntervalSeconds || 60) * 1000;
-  const maxTries = cfg.pollMaxTries || 20;
+  const maxTries = cfg.pollMaxTries || 25;
   let notified = false;
 
   for (let i = 0; i < maxTries && !notified; i++) {
     try {
-      const hit = await checkOnce(cfg);
-      if (hit.found) {
-        console.log(`[try ${i + 1}] ${formatMessage(hit, cfg).replace(/\n/g, ' / ')}`);
+      const res = await checkOnce(cfg);
+      if (res.found) {
+        console.log(`[try ${i + 1}] ` + res.matches.map((m) => formatMatch(m).replace(/\n/g, ' ')).join(' | '));
         // 接近画面は十数個前からバスを表示するので、しきい値(あと◯分/◯個前)に
-        // 達したら通知して終了する。
-        if (isNear(hit, cfg)) {
-          await sendNotification(cfg, '🚌 立神ゆきが接近', formatMessage(hit, cfg));
+        // 達した便だけを通知して終了する。
+        const near = res.matches.filter((m) => isNear(m, cfg));
+        if (near.length) {
+          await sendNotification(cfg, notifyTitle(near), formatMatches(near));
           notified = true;
           break;
         }
       } else {
-        console.log(`[try ${i + 1}] ${hit.note || '該当便なし'}`);
+        console.log(`[try ${i + 1}] ${res.note || '該当便なし'}`);
       }
     } catch (e) {
       console.error(`[try ${i + 1}] エラー:`, e.message);

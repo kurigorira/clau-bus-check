@@ -42,13 +42,25 @@ cp config.example.json config.json
 | キー | 意味 |
 |---|---|
 | `url` | スマホで見ている接近情報ページのURLをそのまま貼る |
-| `destination` | 行き先で絞るキーワード(例: `立神`) |
-| `targetDeparture` | 狙う発車時刻 `HH:MM`(例: `06:39`) |
-| `matchWindowMinutes` | 発車時刻の前後この分数以内の便だけ対象にする |
+| `targets` | 通知したい便のリスト。各要素 `{ "destination": 行き先, "targetDeparture": "HH:MM" }`。複数便を指定でき、どれかが接近すれば通知する |
+| `matchWindowMinutes` | 定刻が `targetDeparture` の前後この分数以内の便だけ対象にする |
+| `notifyWithinMinutes` / `notifyWithinStops` | 「あと◯分」または「◯個前」がこの値以下になったら通知(早すぎる通知を防ぐ)。両方省くと出た時点で即通知 |
 | `notify.type` | `ntfy` / `discord` / `slack` / `none` |
 | `notify.ntfyTopic` | ntfy を使う場合の購読URL(例 `https://ntfy.sh/自分だけのランダム文字列`) |
 
-> **通知の一番簡単な入口は [ntfy](https://ntfy.sh)**。スマホに ntfy アプリを入れて適当なトピック名(推測されにくい文字列)を購読するだけ。LINE Notify は 2025年3月で終了したため非対応です。
+`targets` の例(日並→浦上駅前に使える3便。立神は運休日があるので他2便も入れておくと運休日もカバー):
+
+```json
+"targets": [
+  { "destination": "立神",   "targetDeparture": "06:37" },
+  { "destination": "浦上駅前", "targetDeparture": "06:37" },
+  { "destination": "大波止",   "targetDeparture": "06:40" }
+]
+```
+
+> 行き先は「`◯◯ゆき`」の `◯◯` 部分をキーワードにする。`新地中華街ゆき [大波止経由]` のような経由地は行き先として誤検知しない。
+>
+> **通知の一番簡単な入口は [ntfy](https://ntfy.sh)**。スマホに ntfy アプリを入れて推測されにくいトピック名を購読するだけ。LINE Notify は 2025年3月で終了したため非対応です。旧 `destination`/`targetDeparture`(単一便)も後方互換で動きます。
 
 ---
 
