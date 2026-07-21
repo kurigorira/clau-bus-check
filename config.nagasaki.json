@@ -1,0 +1,25 @@
+{
+  "url": "https://transfer-cloud.navitime.biz/nagasaki-bus/approachings?departure-busstop=00410505&pole=000000001062",
+
+  "targets": [
+    { "destination": "立神",   "targetDeparture": "06:37" },
+    { "destination": "浦上駅前", "targetDeparture": "06:37" },
+    { "destination": "大波止",   "targetDeparture": "06:40" }
+  ],
+  "matchWindowMinutes": 6,
+
+  "notify": {
+    "type": "ntfy",
+    "ntfyTopic": "https://ntfy.sh/REPLACE_ME",
+    "priority": "urgent",
+    "webhookUrl": ""
+  },
+
+  "headless": true,
+  "timeoutMs": 45000,
+
+  "pollIntervalSeconds": 60,
+  "pollMaxTries": 25,
+  "notifyWithinMinutes": 5,
+  "notifyWithinStops": 3
+}
