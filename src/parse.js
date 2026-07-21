@@ -71,21 +71,22 @@ function destMatches(cardText, keyword) {
   return new RegExp(`${esc}[^\\[]{0,15}(?:ゆき|行き)`).test(cardText);
 }
 
-/** カード(行配列)から時刻・接近状況を抽出 */
+/** カード(行配列)から時刻・接近状況を抽出。
+ *  実画面は「定刻」「06:40」「遅れなし」…が各行に分かれるため、行を結合して解釈する。
+ *  結合テキストで最初に現れる定刻=乗車バス停の発(着の定刻が続く場合も先頭が発)。 */
 function parseCard(cardLines) {
   const text = cardLines.join(' ');
 
-  // 発の定刻 = 最初に現れる「定刻 HH:MM」の行(レイアウトA/Bとも先頭の定刻が発)
-  const schedLine = cardLines.find((l) => /定刻\s*\d{1,2}:\d{2}/.test(l)) || '';
-  const scheduled = (/定刻\s*(\d{1,2}:\d{2})/.exec(schedLine) || [])[1] || null;
-  const predicted = (/(\d{1,2}:\d{2})\s*予測/.exec(schedLine) || [])[1] || null;
+  const scheduled = (/定刻\s*(\d{1,2}:\d{2})/.exec(text) || [])[1] || null;
+  const predicted = (/(\d{1,2}:\d{2})\s*予測/.exec(text) || [])[1] || null;
 
   let delayText = null;
-  const delayM = /約?\s*(\d+)\s*分遅れ/.exec(schedLine);
-  const earlyM = /約?\s*(\d+)\s*分\s*早/.exec(schedLine);
+  const delayM = /約?\s*(\d+)\s*分遅れ/.exec(text);
+  const earlyM = /約?\s*(\d+)\s*分\s*早/.exec(text);
   if (delayM) delayText = `約${delayM[1]}分遅れ`;
   else if (earlyM) delayText = `約${earlyM[1]}分早発`;
-  else if (/定刻\s*(?:通り|どおり)/.test(schedLine)) delayText = '定刻どおり';
+  else if (/遅れなし/.test(text)) delayText = '遅れなし';
+  else if (/定刻\s*(?:通り|どおり)/.test(text)) delayText = '定刻どおり';
 
   const soon = /まもなく/.test(text);
   const minM = /あと\s*約?\s*(\d+)\s*分/.exec(text);
