@@ -19,7 +19,7 @@
   "timeoutMs": 45000,
 
   "pollIntervalSeconds": 60,
-  "pollMaxTries": 25,
-  "notifyWithinMinutes": 5,
-  "notifyWithinStops": 3
+  "pollMaxTries": 30,
+  "notifyWithinMinutes": 10,
+  "notifyWithinStops": null
 }

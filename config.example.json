@@ -27,11 +27,13 @@
   "headless": true,
   "timeoutMs": 45000,
 
-  "_poll_note": "以下は poll モード(--once なし)用。scheduler から起動する場合はこのモード。",
+  "_poll_note": "以下は poll モード(--once なし)用。scheduler から起動する場合はこのモード。しきい値内に入った便を到着まで毎サイクル くり返し通知する。",
   "pollIntervalSeconds": 60,
-  "pollMaxTries": 25,
+  "_pollInterval_note": "確認間隔(秒)。接近画面は1分ごとに更新なので60未満にしても新しい情報は増えない。",
+  "pollMaxTries": 30,
+  "_pollMaxTries_note": "最大確認回数。60秒間隔なら約30分見張る。6:20起動で6:40発まで十分カバー。",
 
-  "_threshold_note": "接近画面は十数個前からバスを表示する。早すぎる通知を防ぐため、あと◯分以内 または ◯個前以内 になった時だけ通知する。両方 null にすると出た時点で即通知。",
-  "notifyWithinMinutes": 5,
-  "notifyWithinStops": 3
+  "_threshold_note": "接近画面は十数個前からバスを表示する。早すぎる通知を防ぐため、あと◯分以内(または◯個前以内)になった便だけを通知する。到着して圏外に出るまで毎サイクル連発。両方 null にすると出た時点から即通知。",
+  "notifyWithinMinutes": 10,
+  "notifyWithinStops": null
 }

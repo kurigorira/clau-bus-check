@@ -115,36 +115,40 @@ async function main() {
     return;
   }
 
-  // poll モード: 発車が近い時間帯に数分おきに確認し、接近を検知したら通知して終了
+  // poll モード: しきい値(あと◯分以内)に入った便を、到着して接近圏から消えるまで
+  // 毎サイクル くり返し通知する(連発)。
   const intervalMs = (cfg.pollIntervalSeconds || 60) * 1000;
   const maxTries = cfg.pollMaxTries || 25;
-  let notified = false;
+  let everNotified = false;
 
-  for (let i = 0; i < maxTries && !notified; i++) {
+  for (let i = 0; i < maxTries; i++) {
     try {
       const res = await checkOnce(cfg);
+      const near = res.found ? res.matches.filter((m) => isNear(m, cfg)) : [];
+
       if (res.found) {
         console.log(`[try ${i + 1}] ` + res.matches.map((m) => formatMatch(m).replace(/\n/g, ' ')).join(' | '));
-        // 接近画面は十数個前からバスを表示するので、しきい値(あと◯分/◯個前)に
-        // 達した便だけを通知して終了する。
-        const near = res.matches.filter((m) => isNear(m, cfg));
-        if (near.length) {
-          await sendNotification(cfg, notifyTitle(near), formatMatches(near));
-          notified = true;
-          break;
-        }
       } else {
         console.log(`[try ${i + 1}] ${res.note || '該当便なし'}`);
+      }
+
+      if (near.length) {
+        await sendNotification(cfg, notifyTitle(near), formatMatches(near));
+        everNotified = true;
+      } else if (everNotified) {
+        // 一度通知した便がしきい値内から消えた = 到着/出発 → 連発を終了
+        console.log('対象便が接近圏から外れました(到着/出発)。通知を終了します。');
+        break;
       }
     } catch (e) {
       console.error(`[try ${i + 1}] エラー:`, e.message);
     }
-    if (!notified && i < maxTries - 1) {
+    if (i < maxTries - 1) {
       await new Promise((r) => setTimeout(r, intervalMs));
     }
   }
 
-  if (!notified) console.log('接近を検知できないまま終了しました。');
+  if (!everNotified) console.log('接近を検知できないまま終了しました。');
 }
 
 main().catch((e) => {
