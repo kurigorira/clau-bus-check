@@ -35,5 +35,5 @@
 
   "_threshold_note": "接近画面は十数個前からバスを表示する。早すぎる通知を防ぐため、あと◯分以内(または◯個前以内)になった便だけを通知する。到着して圏外に出るまで毎サイクル連発。両方 null にすると出た時点から即通知。",
   "notifyWithinMinutes": 10,
-  "notifyWithinStops": null
+  "notifyWithinStops": 10
 }

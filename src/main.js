@@ -135,7 +135,10 @@ async function main() {
   // 毎サイクル くり返し通知する(連発)。
   const intervalMs = (cfg.pollIntervalSeconds || 60) * 1000;
   const maxTries = cfg.pollMaxTries || 25;
+  // 一瞬の取りこぼしで連発が止まらないよう、この回数連続で圏外になったら終了
+  const stopAfterMisses = cfg.stopAfterConsecutiveMisses ?? 2;
   let everNotified = false;
+  let consecutiveMisses = 0;
 
   for (let i = 0; i < maxTries; i++) {
     try {
@@ -151,10 +154,14 @@ async function main() {
       if (near.length) {
         await sendNotification(cfg, notifyTitle(near), formatMatches(near));
         everNotified = true;
+        consecutiveMisses = 0;
       } else if (everNotified) {
-        // 一度通知した便がしきい値内から消えた = 到着/出発 → 連発を終了
-        console.log('対象便が接近圏から外れました(到着/出発)。通知を終了します。');
-        break;
+        consecutiveMisses++;
+        if (consecutiveMisses >= stopAfterMisses) {
+          // 通知していた便がしきい値内から消えた = 到着/出発 → 連発を終了
+          console.log('対象便が接近圏から外れました(到着/出発)。通知を終了します。');
+          break;
+        }
       }
     } catch (e) {
       console.error(`[try ${i + 1}] エラー:`, e.message);
