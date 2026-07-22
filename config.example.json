@@ -1,0 +1,39 @@
+{
+  "_comment": "このファイルを config.json にコピーして自分の値に書き換えてください。",
+
+  "url": "https://transfer-cloud.navitime.biz/nagasaki-bus/approachings?departure-busstop=00410505&pole=000000001062",
+  "_url_note": "スマホで見ている接近情報ページのURLをそのまま貼る。departure-busstop=乗るバス停ID(日並=00410505), pole=のりばID。別のバス停にするならサイトの『バス停変更』で選んでURLをコピーする。",
+
+  "_targets_note": "通知したい便のリスト。日並→浦上駅前に使える3便。立神は運休日があるので、浦上駅前ゆき/大波止ゆきも入れておくと運休日もカバーできる。destination は行き先(『◯◯ゆき』の◯◯部分。経由地は誤検知しない)、targetDeparture はその便の定刻。",
+  "targets": [
+    { "destination": "立神",   "targetDeparture": "06:37" },
+    { "destination": "浦上駅前", "targetDeparture": "06:37" },
+    { "destination": "大波止",   "targetDeparture": "06:40" }
+  ],
+
+  "matchWindowMinutes": 6,
+  "_matchWindowMinutes_note": "定刻が targetDeparture から前後この分数以内の便だけ対象にする(別便の誤検知を防ぐ)。",
+
+  "notify": {
+    "type": "ntfy",
+    "_type_note": "ntfy | discord | slack | none のいずれか。",
+    "ntfyTopic": "https://ntfy.sh/あなた専用のランダムな文字列",
+    "priority": "urgent",
+    "_priority_note": "ntfyの優先度。urgent(最高)なら睡眠/集中モードでもntfyアプリを許可すれば鳴らせる。",
+    "webhookUrl": "",
+    "_webhookUrl_note": "discord/slack を選んだ場合はここに Incoming Webhook URL を入れる。"
+  },
+
+  "headless": true,
+  "timeoutMs": 45000,
+
+  "_poll_note": "以下は poll モード(--once なし)用。scheduler から起動する場合はこのモード。しきい値内に入った便を到着まで毎サイクル くり返し通知する。",
+  "pollIntervalSeconds": 60,
+  "_pollInterval_note": "確認間隔(秒)。接近画面は1分ごとに更新なので60未満にしても新しい情報は増えない。",
+  "pollMaxTries": 30,
+  "_pollMaxTries_note": "最大確認回数。60秒間隔なら約30分見張る。6:20起動で6:40発まで十分カバー。",
+
+  "_threshold_note": "接近画面は十数個前からバスを表示する。早すぎる通知を防ぐため、あと◯分以内(または◯個前以内)になった便だけを通知する。到着して圏外に出るまで毎サイクル連発。両方 null にすると出た時点から即通知。",
+  "notifyWithinMinutes": 10,
+  "notifyWithinStops": 10
+}

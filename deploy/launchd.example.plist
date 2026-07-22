@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  macOS (自宅Mac) で毎朝 6:20 に poll モード起動する例。
+  1) node のフルパスを確認: which node
+  2) 下の /PATH_TO/ と node パスを自分の値に置換
+  3) ~/Library/LaunchAgents/com.clau.bus-check.plist として保存
+  4) launchctl load ~/Library/LaunchAgents/com.clau.bus-check.plist
+  Mac がスリープしていると起動しない点に注意(電源設定 or `caffeinate`/自動起動を検討)。
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.clau.bus-check</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/node</string>
+    <string>/PATH_TO/clau-bus-check/src/main.js</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/PATH_TO/clau-bus-check</string>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>6</integer>
+    <key>Minute</key><integer>20</integer>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>/PATH_TO/clau-bus-check/bus.log</string>
+  <key>StandardErrorPath</key>
+  <string>/PATH_TO/clau-bus-check/bus.err.log</string>
+</dict>
+</plist>

@@ -1,0 +1,12 @@
+# 毎朝 6:25 に1回チェックして通知(cron 向き・--once)
+# タイムゾーンが日本(JST)であることを確認すること。
+#   確認: date        修正例(Linux): sudo timedatectl set-timezone Asia/Tokyo
+#
+# crontab -e で以下を追記(パスは環境に合わせて変更):
+
+25 6 * * * cd /path/to/clau-bus-check && /usr/bin/node src/main.js --once >> /path/to/clau-bus-check/bus.log 2>&1
+
+# 「発車が近づくにつれ数分おきに確認して、まもなくで通知」したい場合は
+# poll モードを 6:20 に起動する(内部で最大 pollMaxTries 回ポーリングして終了):
+#
+# 20 6 * * * cd /path/to/clau-bus-check && /usr/bin/node src/main.js >> /path/to/clau-bus-check/bus.log 2>&1
