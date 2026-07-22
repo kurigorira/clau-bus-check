@@ -18,6 +18,8 @@ const argv = process.argv.slice(2);
 const args = new Set(argv);
 const DEBUG = args.has('--debug');
 const ONCE = args.has('--once');
+// --test : 対象便やしきい値を無視して、いま接近中のバスを実データで通知(疎通確認用)
+const TEST = args.has('--test');
 // --wait=SECONDS : ページ読み込み後の待機秒数を上書き(接近APIの自動更新ポーリングを
 // 捕捉したい朝の調査用。例: --wait=90 で1分周期の更新を1回は拾える)
 const WAIT_ARG = argv.find((a) => a.startsWith('--wait='));
@@ -98,6 +100,20 @@ function notifyTitle(nearMatches) {
 
 async function main() {
   const cfg = loadConfig();
+
+  if (TEST) {
+    // 対象便・しきい値を無視して、いま接近中のバスを実データで1件通知する疎通確認
+    const raw = await fetchApproaching(cfg, DEBUG, WAIT_MS);
+    const res = parseTargets(raw, { ...cfg, targets: [{ destination: '*' }], matchWindowMinutes: 9999 });
+    if (res.found) {
+      const body = res.matches.slice(0, 3).map((m) => m.rawBlock).join('\n―――\n');
+      console.log('[TEST hit] 実データで通知します:\n' + body);
+      await sendNotification(cfg, '🚌 テスト(実データ)', body);
+    } else {
+      console.log('[TEST] いま接近中のバスがありません:', res.note);
+    }
+    return;
+  }
 
   if (ONCE) {
     const res = await checkOnce(cfg);

@@ -66,6 +66,7 @@ function getTargets(cfg) {
 /** 行き先キーワードが「その便の行き先」として出ているか(経由地の誤検知を防ぐ) */
 function destMatches(cardText, keyword) {
   if (!keyword) return false;
+  if (keyword === '*') return /(?:ゆき|行き)/.test(cardText); // テスト用: 全便にマッチ
   const esc = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   // キーワードの直後(経由地の[まで]の範囲内)に「ゆき/行き」が来るものだけを行き先とみなす
   return new RegExp(`${esc}[^\\[]{0,15}(?:ゆき|行き)`).test(cardText);
